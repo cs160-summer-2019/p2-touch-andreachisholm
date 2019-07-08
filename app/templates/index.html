@@ -8,7 +8,7 @@
 	<link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="{% static '/vendors/bootstrap/css/bootstrap.css' %}" />
 	<link rel="stylesheet" type="text/css" href="{% static '/css/main.css' %}" />
-
+  
 	<script src="{% static '/vendors/jquery/jquery-3.3.1.min.js' %}"></script>
 	<script src="{% static '/vendors/jquery-ui/jquery-ui.min.js' %}"></script>
 	<script src="{% static '/vendors/hammer/hammer.min.js' %}"></script>
@@ -46,11 +46,35 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
+      position: absolute;
 		}
 
 		.action-complete {
 			background: #ffffff;
 		}
+    
+    
+    .close {
+      background: #DC4D4D;
+      opacity: 1;
+      border-radius: 50%;
+      width: 15px;
+      height: 15px;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      display: inline-block;
+    }
+    
+    .close-x {
+      font-size: 8px;
+      color: #fff;
+      position: absolute;
+      top: 3.1px;
+      right: 4.6px;
+      font-family: sans-serif;
+    }
+    
 	</style>
 
 </head>
@@ -68,7 +92,12 @@
 						<div class="small-box" id="pinch-box">Pinch</div>
 					</div>
 					<div class="large-box">
-						<div class="small-box" id="press-box">Press</div>
+						<div class="small-box" id="press-box">
+              Press
+              <div class="close">
+                <span class="close-x">X</span>
+              </div>
+            </div>
 					</div>
 					<div class="large-box">
 						<div class="small-box" id="pan-box">Pan</div>
@@ -83,8 +112,177 @@
 			</div>
 		</div>
 	</div>
+  
+  
+  
 	<script>
-	  // your solution here
+    $('.close').hide();
+    
+    //function to choose random color help from https://stackoverflow.com/questions/1484506/random-color-generator?page=1&tab=votes#tab-top
+    function getRandomColor() {
+      var letters = '0123456789ABCDEF';
+      var color = '#';
+      for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+    
+    //---------------ROTATE BOX---------------------
+    var rotateBox = document.getElementById('rotate-box');
+    var rotateMC = new Hammer(rotateBox);
+    var rotate = new Hammer.Rotate();
+    rotateMC.add(rotate);
+    
+    
+    rotateMC.on("rotate", function(ev) {
+      var nextRotation = "rotate(" + String(Math.round(ev.rotation)) + "deg)";
+
+      $('#rotate-box').css('transform', nextRotation);
+
+
+    })
+    
+    
+    
+    
+    //---------------PINCH BOX---------------------
+    var pinchBox = document.getElementById('pinch-box');
+    var pinchMC = new Hammer(pinchBox);
+    var pinch = new Hammer.Pinch();
+    pinchMC.add(pinch);
+    
+    //changing the width of the square as users pinch
+    pinchMC.on("pinchin pinchout", function(ev) {
+      $("#pinch-box").width(function(n, c) {
+        if (ev.type == "pinchin") {
+          //making sure the square isn't too small
+          if (c < 80) {
+            return c;
+          } else {
+            return c - 10;
+          }
+        } else {
+          //making sure the square isn't too big
+          if (c > 270) {
+            return c;
+          } else {
+            return c + 10;
+          }
+        }
+      })
+      
+      //changing the height of the square as users pinch
+      $("#pinch-box").height(function(n, c) {
+        if (ev.type == "pinchin") {
+          //making sure the square isn't too small
+          if (c < 80) {
+            return c;
+          } else {
+            return c - 10;
+          }
+        } else {
+          //making sure the square isn't too big
+          if (c > 270) {
+            return c;
+          } else {
+            return c + 10;
+          }
+        }
+      })
+    });
+    
+    
+    //---------------PRESS BOX---------------------
+    var pressBox = document.getElementById('press-box');
+    var pressMC = new Hammer(pressBox);
+    var press = new Hammer.Press();
+    pressMC.add(press);
+    
+    
+    pressMC.on("press", function(ev) {
+      $('.close').show();
+      
+      $('.close').on('click', () => {
+        $('#press-box').hide();
+      });
+
+    })
+    
+    //---------------PAN BOX---------------------    
+    var panBox = document.getElementById('pan-box');
+    var panMC = new Hammer(panBox);
+    var pan = new Hammer.Pan();
+    panMC.add(pan);
+    
+    //store the original X and Y coordinates
+    var origX = $('#pan-box').css('right');
+    var origY = $('#pan-box').css('top');
+    
+    panMC.on("panup pandown panleft panright panend", function(ev) {
+      //make box go to user pointer X position
+      var newX = String(parseInt(origX) - ev.deltaX) + "px";
+      $('#pan-box').css('right', newX);
+      
+      //make box go to user pointer Y position
+      var newY = String(parseInt(origY) + ev.deltaY) + "px";
+      $('#pan-box').css('top', newY);
+      
+      //if user picks up pointer, then send box to original position
+      if (ev.type == "panend") {
+        $('#pan-box').css('right', origX);
+        $('#pan-box').css('top', origY);
+      }
+      
+    })
+    
+    
+    //---------------TAP BOX---------------------    
+    var tapBox = document.getElementById('tap-box');
+    var tapMC = new Hammer(tapBox);
+    var tap = new Hammer.Tap();
+    tapMC.add(tap);
+    
+    tapMC.on("tap", function(ev) {
+      $('#tap-box').css('background', getRandomColor());
+    })
+    
+    
+    //---------------SWIPE BOX---------------------    
+    var swipeBox = document.getElementById('swipe-box');
+    var swipeMC = new Hammer(swipeBox);
+    swipeMC.get('swipe').set({
+      direction: Hammer.DIRECTION_ALL,
+      threshold: 1, 
+      velocity:0.1
+    });
+    
+    var colors = [];
+    var currColor = 0;
+
+    swipeMC.on('swiperight swipeleft', function(ev) {
+      //checking if swipe right or swipe left
+      if (ev.type == 'swiperight') {
+        //check if at end of colors list, if so then add a new color
+        if (currColor == colors.length) {
+          var color = getRandomColor();
+          colors.push(color);
+        }
+        //change color to currColor
+        $('#swipe-box').css('background', colors[currColor]);
+        currColor = currColor + 1;
+      } else {
+        //check if at beginning of list
+        if (currColor > 0) {
+          currColor = currColor - 1;
+          $('#swipe-box').css('background', colors[currColor - 1]);
+        }
+      }
+
+    })
+    
+
+    
   </script>
 </body>
 </html>
